@@ -1,0 +1,4 @@
+customer_id,first_name,last_name,email,country,created_at
+17,Marie,Dupont,marie.dupont@email.com,FR,2023-06-15 10:00:00
+42,Thomas,Martin,thomas.martin@email.com,FR,2023-11-01 08:30:00
+99,,Garcia,,ES,2024-01-02 14:00:00

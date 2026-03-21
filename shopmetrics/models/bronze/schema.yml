@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: audit_qualite
+    description: "Détection des anomalies de données brutes"
+
+sources:
+  - name: dev
+    database: SHOPMETRICS
+    schema: DEV
+    tables:
+      - name: raw_orders
+        columns:
+          - name: order_id
+            tests:
+              - unique
+              - not_null
+          - name: status
+            tests:
+              - accepted_values:
+                  values: ["completed", "cancelled", "pending"]
+
+      - name: raw_customers
+        columns:
+          - name: customer_id
+            tests:
+              - unique
+              - not_null
+          - name: email
+            tests:
+              - not_null

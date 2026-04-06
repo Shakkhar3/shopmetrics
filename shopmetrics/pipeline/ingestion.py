@@ -87,7 +87,7 @@ def get_snowflake_connection():
 
 # ── 4. Chargement dans Snowflake ──────────────────────────────────────────────
 def load_to_snowflake(df, conn):
-    """Charge le DataFrame dans Snowflake."""
+    """Charge le DataFrame dans Snowflake avec MERGE pour éviter les doublons."""
     cursor = conn.cursor()
 
     # Créer la table si elle n'existe pas
@@ -102,13 +102,28 @@ def load_to_snowflake(df, conn):
         )
     """)
 
-    # Insérer les données
+    # MERGE : insert si nouveau, update si existant
     inserted = 0
     for _, row in df.iterrows():
         cursor.execute("""
-            INSERT INTO RAW_ORDERS_STAGING
-                (order_id, customer_id, order_date, status, total_amount)
-            VALUES (%s, %s, %s, %s, %s)
+            MERGE INTO RAW_ORDERS_STAGING AS target
+            USING (
+                SELECT %s AS order_id,
+                       %s AS customer_id,
+                       %s AS order_date,
+                       %s AS status,
+                       %s AS total_amount
+            ) AS source
+            ON target.order_id = source.order_id
+            WHEN MATCHED THEN
+                UPDATE SET
+                    status       = source.status,
+                    total_amount = source.total_amount,
+                    loaded_at    = CURRENT_TIMESTAMP
+            WHEN NOT MATCHED THEN
+                INSERT (order_id, customer_id, order_date, status, total_amount)
+                VALUES (source.order_id, source.customer_id, source.order_date,
+                        source.status, source.total_amount)
         """, (
             row["order_id"],
             row["customer_id"],
